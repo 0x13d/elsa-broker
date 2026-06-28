@@ -323,7 +323,7 @@ enrollment to card activation.
 
 
 The portfolio standardized on the **Ink** scheme + Tufte base as the unified web look
-([EPIC-011](../../../../../.claude/reference/management-team/program-increments/backlog.md)). The public face of
+(EPIC-011). The public face of
 ElsaBroker is a **DocFX static site** (`dist/elsa-broker`, served at `https://ariugwu.com/elsa-broker`), so the React
 two-column layout can't be reused — instead, **match the Ink colors** via DocFX theming/custom CSS (paper/ink base,
 Ink accents `#3a3a3a`/`#5a5a5a`/`#8a6d3b`/`#11120f`). Keep assets local (no CDN), trust-report posture intact.
@@ -339,7 +339,7 @@ Owner ask (2026-06-11): eventually host the DocFX `dist/elsa-broker` site in a *
 site**. This is grouped with the project's **auth / pipeline / package-publishing credential** items: GitHub Pages
 deploy + the NuGet publish of `EB-004`'s packages both need **publish credentials and a pipeline**, which the
 portfolio has **deferred** until a secrets strategy lands
-([EPIC-010](../../../../../.claude/reference/management-team/program-increments/backlog.md); recorded CSO decision,
+(EPIC-010; recorded CSO decision,
 2026-06-10 — no pipelines/secrets in any repo until then). **Do not pull until EPIC-010 lands.** Until then, builds
 are manual + checklist-gated.
 

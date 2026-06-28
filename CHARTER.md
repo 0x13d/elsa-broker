@@ -1,8 +1,8 @@
 # Charter — elsa-broker
 
-> Links this project to the [portfolio](../../../PORTFOLIO.md) and its governing
-> [C-suite](../../../.claude/reference/management-team/README.md). The charter test: every project serves
-> at least one of the [five goals](../../../.claude/reference/management-team/strategic-themes.md).
+> Links this project to the [portfolio](https://ariugwu.com) and its governing
+> C-suite. The charter test: every project serves
+> at least one of the five goals.
 
 | | |
 |---|---|
@@ -21,7 +21,7 @@ a flagship career-showcase piece.
 ## Alignment note
 
 This project predates the portfolio template and runs its **own** agent team (`.claude/agents/`) and
-agile process — the very process the [software-team template](../../../.claude/reference/software-team/README.md)
+agile process — the very process the software-team template
 was generalized from. Per the portfolio's "respect existing team agile" decision, PIs **reference** its
 sprint work as goal evidence; they do not impose the template on it.
 
