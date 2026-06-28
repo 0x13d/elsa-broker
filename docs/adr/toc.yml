@@ -1,0 +1,22 @@
+- name: Overview
+  href: index.md
+- name: 0001 — MassTransit SQL Server transport
+  href: 0001-use-masstransit-sql-server-transport.md
+- name: 0002 — Transactional outbox/inbox
+  href: 0002-transactional-outbox-inbox.md
+- name: 0003 — mTLS client-certificate auth
+  href: 0003-mtls-client-certificate-authorization.md
+- name: 0004 — Request-type registry
+  href: 0004-config-driven-request-type-registry.md
+- name: 0005 — SQL Server on Apple Silicon (Rosetta)
+  href: 0005-sql-server-on-apple-silicon-via-rosetta.md
+- name: 0006 — Elsa workflows as the processing model
+  href: 0006-elsa-workflows-as-the-processing-model.md
+- name: 0007 — Custom topology vs Elsa built-in dispatch
+  href: 0007-custom-masstransit-topology-vs-elsa-built-in-dispatch.md
+- name: 0008 — NuGet package boundaries
+  href: 0008-nuget-package-boundaries.md
+- name: 0009 — Plugin system
+  href: 0009-plugin-system.md
+- name: Template (MADR)
+  href: adr-template.md

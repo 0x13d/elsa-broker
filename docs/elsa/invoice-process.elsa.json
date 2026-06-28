@@ -1,0 +1,75 @@
+{
+  "id": "invoice-process-1",
+  "definitionId": "InvoiceProcess",
+  "name": "Invoice Process",
+  "version": 1,
+  "isPublished": true,
+  "isLatest": true,
+  "root": {
+    "id": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "activities": [
+      {
+        "id": "HttpEndpoint1",
+        "type": "Elsa.Http.HttpEndpoint",
+        "displayName": "Receive Invoice Request",
+        "properties": {}
+      },
+      {
+        "id": "If1",
+        "type": "Elsa.If",
+        "displayName": "Amount within auto-approve limit?",
+        "properties": {}
+      },
+      {
+        "id": "Sequence1",
+        "type": "Elsa.Sequence",
+        "displayName": "Auto-post",
+        "activities": [
+          {
+            "id": "SendHttpRequest1",
+            "type": "Elsa.Http.SendHttpRequest",
+            "displayName": "Post to ledger",
+            "properties": {}
+          },
+          {
+            "id": "WriteHttpResponse1",
+            "type": "Elsa.Http.WriteHttpResponse",
+            "displayName": "Return Completed",
+            "properties": {}
+          }
+        ]
+      },
+      {
+        "id": "Sequence2",
+        "type": "Elsa.Sequence",
+        "displayName": "Manual review",
+        "activities": [
+          {
+            "id": "SendEmail1",
+            "type": "Elsa.Email.SendEmail",
+            "displayName": "Email AP team",
+            "properties": {}
+          },
+          {
+            "id": "Signal1",
+            "type": "Elsa.Primitives.SignalReceived",
+            "displayName": "Await approval",
+            "properties": {}
+          },
+          {
+            "id": "WriteHttpResponse2",
+            "type": "Elsa.Http.WriteHttpResponse",
+            "displayName": "Return Completed",
+            "properties": {}
+          }
+        ]
+      }
+    ],
+    "connections": [
+      { "source": "HttpEndpoint1", "target": "If1",       "sourcePort": "Done",  "targetPort": "In" },
+      { "source": "If1",           "target": "Sequence1",  "sourcePort": "True",  "targetPort": "In" },
+      { "source": "If1",           "target": "Sequence2",  "sourcePort": "False", "targetPort": "In" }
+    ]
+  }
+}

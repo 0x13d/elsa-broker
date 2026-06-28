@@ -1,0 +1,16 @@
+{
+  "requestTypes": [
+    {
+      "clientId": "ClientA",
+      "requestType": "InvoiceProcess",
+      "requiredKeys": ["InvoiceNumber", "VendorCode"],
+      "allowAdditionalKeys": false
+    },
+    {
+      "clientId": "ClientB",
+      "requestType": "PolicyRenewal",
+      "requiredKeys": ["PolicyNumber", "EffectiveDate", "LobCode"],
+      "allowAdditionalKeys": true
+    }
+  ]
+}

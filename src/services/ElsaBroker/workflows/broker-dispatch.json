@@ -1,0 +1,83 @@
+{
+  "id": "a23036d76f28c4eb",
+  "definitionId": "fbfd3e91009a84f8",
+  "name": "elsa-broker",
+  "version": 7,
+  "toolVersion": "3.2.0.0",
+  "variables": [
+    { "id": "bff764b04cf05fbf", "name": "Request", "typeName": "Object", "isArray": false, "storageDriverTypeName": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core" },
+    { "id": "a602fea4a2289f50", "name": "Result", "typeName": "Object", "isArray": false, "storageDriverTypeName": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core" }
+  ],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": { "role": "dispatcher", "logPersistenceMode": { "default": "Include" } },
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": { "autoUpdateConsumingWorkflows": false },
+  "root": {
+    "id": "5e378da191dfad15",
+    "nodeId": "Workflow1:5e378da191dfad15",
+    "name": "RecieveMessageEndPoint",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": { "notFoundConnections": [], "canStartWorkflow": false, "runAsynchronously": false },
+    "activities": [
+      {
+        "id": "69c58b03aa83c782",
+        "nodeId": "Workflow1:5e378da191dfad15:69c58b03aa83c782",
+        "name": "HttpEndpoint1",
+        "type": "Elsa.HttpEndpoint",
+        "version": 1,
+        "displayText": "Receive dispatch request",
+        "path": { "typeName": "String", "expression": { "type": "Literal", "value": "broker-dispatch" } },
+        "supportedMethods": { "typeName": "String[]", "expression": { "type": "Object", "value": "[\"POST\"]" } },
+        "parsedContent": { "typeName": "Object", "memoryReference": { "id": "bff764b04cf05fbf" } },
+        "customProperties": { "canStartWorkflow": true, "runAsynchronously": false }
+      },
+      {
+        "id": "65d2783fa653b845",
+        "nodeId": "Workflow1:5e378da191dfad15:65d2783fa653b845",
+        "name": "WriteHttpResponse1",
+        "type": "Elsa.WriteHttpResponse",
+        "version": 1,
+        "displayText": "Ack",
+        "statusCode": { "typeName": "System.Net.HttpStatusCode, System.Net.Primitives", "expression": { "type": "Literal", "value": "Accepted" } },
+        "responseHeaders": { "typeName": "Elsa.Http.Models.HttpHeaders, Elsa.Http", "expression": { "type": "Literal", "value": "{}" } }
+      },
+      {
+        "id": "614f2c16bd647fcc",
+        "nodeId": "Workflow1:5e378da191dfad15:614f2c16bd647fcc",
+        "name": "DispatchWorkflow1",
+        "type": "Elsa.DispatchWorkflow",
+        "version": 1,
+        "displayText": "Run Target Workflow",
+        "workflowDefinitionId": { "typeName": "String", "expression": { "type": "JavaScript", "value": "getVariable('Request').definitionId" } },
+        "correlationId": { "typeName": "String", "expression": { "type": "JavaScript", "value": "getVariable('Request').correlationId" } },
+        "input": { "typeName": "System.Collections.Generic.IDictionary`2[[System.String, System.Private.CoreLib],[System.Object, System.Private.CoreLib]], System.Private.CoreLib", "expression": { "type": "JavaScript", "value": "getVariable('Request').message" } },
+        "waitForCompletion": { "typeName": "Boolean", "expression": { "type": "Literal", "value": "True" } },
+        "result": { "typeName": "Object", "memoryReference": { "id": "a602fea4a2289f50" } }
+      },
+      {
+        "id": "8e6a55f59905d227",
+        "nodeId": "Workflow1:5e378da191dfad15:8e6a55f59905d227",
+        "name": "SendHttpRequest1",
+        "type": "Elsa.SendHttpRequest",
+        "version": 1,
+        "displayText": "Callback Broker",
+        "url": { "typeName": "System.Uri, System.Private.Uri", "expression": { "type": "JavaScript", "value": "getVariable('Request').callbackUrl" } },
+        "method": { "typeName": "String", "expression": { "type": "Literal", "value": "POST" } },
+        "content": { "typeName": "Object", "expression": { "type": "JavaScript", "value": "JSON.stringify({ status: 'Completed', result: getVariable('Result') })" } },
+        "contentType": { "typeName": "String", "expression": { "type": "Literal", "value": "application/json" } },
+        "requestHeaders": { "typeName": "Elsa.Http.Models.HttpHeaders, Elsa.Http", "expression": { "type": "JavaScript", "value": "({ 'X-Callback-Secret': getVariable('Request').callbackSecret })" } }
+      }
+    ],
+    "connections": [
+      { "source": { "activity": "69c58b03aa83c782", "port": "Done" }, "target": { "activity": "65d2783fa653b845", "port": "In" } },
+      { "source": { "activity": "65d2783fa653b845", "port": "Done" }, "target": { "activity": "614f2c16bd647fcc", "port": "In" } },
+      { "source": { "activity": "614f2c16bd647fcc", "port": "Done" }, "target": { "activity": "8e6a55f59905d227", "port": "In" } }
+    ]
+  }
+}

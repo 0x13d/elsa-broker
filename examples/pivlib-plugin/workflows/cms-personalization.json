@@ -1,0 +1,30 @@
+{
+  "id": "cms-personalization-v1",
+  "definitionId": "cms-personalization",
+  "name": "CMS Personalization",
+  "version": 1,
+  "isLatest": true,
+  "isPublished": true,
+  "customProperties": { "requestType": "CmsPersonalization" },
+  "variables": [],
+  "root": {
+    "id": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "activities": [
+      {
+        "id": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Card Management System personalization complete — PIV card data written."
+          }
+        }
+      }
+    ],
+    "connections": []
+  }
+}

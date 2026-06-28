@@ -1,0 +1,121 @@
+# Lab stack for elsa-broker:
+#   sqlserver     — the broker's database + MassTransit SQL transport (Rosetta on arm).
+#   elsa-server   — custom Elsa 3 server built from ElsaBroker.WorkflowServer (source).
+#   elsa-studio   — official Elsa Studio SPA pointing at elsa-server's API.
+#
+# The broker Queue + Processor run locally via `dotnet run` for now (callbacks return
+# to the host on :5080 via host.docker.internal). Containerising them is a follow-up.
+
+services:
+  sqlserver:
+    # Real SQL Server 2022 — the production engine. On Apple Silicon this amd64
+    # image is run via Docker Desktop's Rosetta x86-64 emulation (enable
+    # Settings > General > "Use Rosetta for x86_64/amd64 emulation"). Under the
+    # older QEMU path sqlservr crashes with an invalid VA mapping; Rosetta fixes
+    # that. Azure SQL Edge (arm64-native) was rejected — it is retired and not
+    # production-faithful. See ADR-0005.
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    container_name: elsa-broker-sql
+    environment:
+      MSSQL_SA_PASSWORD: "YourStrong!Passw0rd"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"   # free Developer edition
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+
+  elsa-server:
+    # Custom Elsa 3 server built from ElsaBroker.WorkflowServer. Uses the
+    # in-process dispatcher (no MassTransit) so DispatchWorkflow with
+    # WaitForCompletion resumes correctly. Workflow JSON is baked into the
+    # image at build time AND mounted at runtime for live edits from Studio.
+    # Do NOT pin platform: linux/amd64 — runs native arm64 on Apple Silicon;
+    # the amd64 Elsa image crashes under Rosetta's JIT (see ADR-0005).
+    build:
+      context: .
+      dockerfile: ElsaBroker.WorkflowServer/Dockerfile
+    container_name: elsa-broker-server
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      # Override the appsettings signing key via env if needed; the baked-in
+      # dev key is fine for local work.
+      Elsa__Identity__SigningKey: "elsa-broker-dev-signing-key-0123456789abcdef"
+      Elsa__WorkflowsPath: "/app/Workflows"
+    ports:
+      - "13002:8080"
+    volumes:
+      # Mount the host workflows folder so WorkflowFolderImporter picks up the
+      # latest JSON on container start, and Studio exports land on the host.
+      - ./workflows:/app/Workflows:ro
+    extra_hosts:
+      # Lets the broker-dispatch workflow call the Queue's callback listener
+      # on the host at :5080.
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  elsa-studio:
+    # Official Elsa 3 Studio SPA. Connects to the custom elsa-server above
+    # over the Docker network. Studio UI at http://localhost:13000.
+    # Default credentials: admin / password.
+    image: elsaworkflows/elsa-studio-v3:latest
+    container_name: elsa-broker-studio
+    environment:
+      # The Studio SPA fetches from the server's Elsa API endpoint.
+      ELSASERVER__URL: "http://elsa-server:8080/elsa/api"
+    ports:
+      - "13000:8080"
+    depends_on:
+      - elsa-server
+
+  seq:
+    # Seq — structured log server for development. Opt-in via the "logging" profile:
+    #   docker compose --profile logging up -d
+    # UI at http://localhost:8081, ingestion API at http://localhost:5341.
+    # Free for single-user / development use.
+    image: datalust/seq:latest
+    container_name: elsa-broker-seq
+    profiles:
+      - logging
+    environment:
+      ACCEPT_EULA: "Y"
+    ports:
+      - "5341:5341"    # ingestion API (HTTP/JSON)
+      - "8081:80"      # Seq UI
+    volumes:
+      - seq_data:/data
+
+  switchboard:
+    # Switchboard — Blazor Server dashboard for broker observability.
+    # Opt-in via the "dashboard" profile:
+    #   docker compose --profile dashboard up -d
+    # UI at http://localhost:5002, ingestion at POST /api/events.
+    # SQLite DB is persisted in a named volume.
+    build:
+      context: .
+      dockerfile: ElsaBroker.Switchboard/Dockerfile
+    container_name: elsa-broker-switchboard
+    profiles:
+      - dashboard
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:5002"
+      Switchboard__DatabasePath: "/data/switchboard.db"
+    ports:
+      - "5002:5002"
+    volumes:
+      - switchboard_data:/data
+
+volumes:
+  sqlserver_data:
+  seq_data:
+  switchboard_data:

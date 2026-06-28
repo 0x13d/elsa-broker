@@ -1,0 +1,28 @@
+{
+  "requestTypes": [
+    {
+      "clientId": "IdmsEmulator",
+      "requestType": "PivEnroll",
+      "requiredKeys": ["EmployeeId", "AgencyCode"],
+      "allowAdditionalKeys": true
+    },
+    {
+      "clientId": "IdmsEmulator",
+      "requestType": "DcsaVetting",
+      "requiredKeys": ["EmployeeId", "InvestigationType"],
+      "allowAdditionalKeys": false
+    },
+    {
+      "clientId": "IdmsEmulator",
+      "requestType": "CmsPersonalization",
+      "requiredKeys": ["EmployeeId", "FascN", "CardUuid"],
+      "allowAdditionalKeys": false
+    },
+    {
+      "clientId": "IdmsEmulator",
+      "requestType": "PacsProvisioning",
+      "requiredKeys": ["FascN", "FacilityCode"],
+      "allowAdditionalKeys": false
+    }
+  ]
+}

@@ -1,0 +1,238 @@
+@page "/"
+@using Microsoft.EntityFrameworkCore
+@inject SwitchboardDbContext Db
+
+<PageTitle>Switchboard - Overview</PageTitle>
+
+<h1>Overview</h1>
+
+@* ── Metric cards (Azure Portal-style) ── *@
+<FluentStack Orientation="Orientation.Horizontal" Wrap="true" Style="gap: 1rem; margin-bottom: 1.5rem;">
+    <FluentCard Style="min-width: 180px; padding: 1.5rem; text-align: center;">
+        <div style="font-size: 2.5rem; font-weight: 700; color: var(--accent-fill-rest);">@_submitted</div>
+        <div style="font-size: 0.875rem; color: var(--neutral-foreground-hint);">Total Submitted</div>
+    </FluentCard>
+    <FluentCard Style="min-width: 180px; padding: 1.5rem; text-align: center;">
+        <div style="font-size: 2.5rem; font-weight: 700; color: #0078d4;">@_processing</div>
+        <div style="font-size: 0.875rem; color: var(--neutral-foreground-hint);">Processing</div>
+    </FluentCard>
+    <FluentCard Style="min-width: 180px; padding: 1.5rem; text-align: center;">
+        <div style="font-size: 2.5rem; font-weight: 700; color: #107c10;">@_completed</div>
+        <div style="font-size: 0.875rem; color: var(--neutral-foreground-hint);">Completed</div>
+    </FluentCard>
+    <FluentCard Style="min-width: 180px; padding: 1.5rem; text-align: center;">
+        <div style="font-size: 2.5rem; font-weight: 700; color: #d13438;">@_faulted</div>
+        <div style="font-size: 0.875rem; color: var(--neutral-foreground-hint);">Faulted</div>
+    </FluentCard>
+</FluentStack>
+
+@* ── Status funnel ── *@
+<h2>Status Funnel</h2>
+<FluentCard Style="padding: 1.5rem; margin-bottom: 1.5rem;">
+    @if (_submitted > 0)
+    {
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            @{ var total = Math.Max(_submitted, 1); }
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span style="width: 100px; font-size: 0.8rem; text-align: right;">Submitted</span>
+                <div style="flex: 1; background: var(--neutral-layer-3); border-radius: 4px; height: 28px;">
+                    <div style="width: 100%; height: 100%; background: var(--accent-fill-rest); border-radius: 4px; display: flex; align-items: center; padding-left: 8px; color: white; font-size: 0.8rem; font-weight: 600;">
+                        @_submitted
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span style="width: 100px; font-size: 0.8rem; text-align: right;">Processing</span>
+                <div style="flex: 1; background: var(--neutral-layer-3); border-radius: 4px; height: 28px;">
+                    <div style="width: @(Math.Max((int)((double)_processing / total * 100), _processing > 0 ? 4 : 0))%; height: 100%; background: #0078d4; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; color: white; font-size: 0.8rem; font-weight: 600; min-width: @(_processing > 0 ? "40px" : "0");">
+                        @if (_processing > 0) { @_processing }
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span style="width: 100px; font-size: 0.8rem; text-align: right;">Completed</span>
+                <div style="flex: 1; background: var(--neutral-layer-3); border-radius: 4px; height: 28px;">
+                    <div style="width: @(Math.Max((int)((double)_completed / total * 100), _completed > 0 ? 4 : 0))%; height: 100%; background: #107c10; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; color: white; font-size: 0.8rem; font-weight: 600; min-width: @(_completed > 0 ? "40px" : "0");">
+                        @if (_completed > 0) { @_completed }
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span style="width: 100px; font-size: 0.8rem; text-align: right;">Faulted</span>
+                <div style="flex: 1; background: var(--neutral-layer-3); border-radius: 4px; height: 28px;">
+                    <div style="width: @(Math.Max((int)((double)_faulted / total * 100), _faulted > 0 ? 4 : 0))%; height: 100%; background: #d13438; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; color: white; font-size: 0.8rem; font-weight: 600; min-width: @(_faulted > 0 ? "40px" : "0");">
+                        @if (_faulted > 0) { @_faulted }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <p style="color: var(--neutral-foreground-hint);">No events recorded yet.</p>
+    }
+</FluentCard>
+
+@* ── Throughput over time (last 24h, hourly buckets) ── *@
+<h2>Throughput (Last 24 Hours)</h2>
+<FluentCard Style="padding: 1.5rem; margin-bottom: 1.5rem;">
+    @if (_throughputData.Count > 0)
+    {
+        <div style="display: flex; align-items: flex-end; gap: 2px; height: 120px;">
+            @foreach (var bucket in _throughputData)
+            {
+                var barHeight = _maxThroughput > 0
+                    ? Math.Max((int)((double)bucket.Count / _maxThroughput * 100), bucket.Count > 0 ? 4 : 1)
+                    : 1;
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%;"
+                     title="@bucket.Hour.ToString("MMM dd HH:mm") — @bucket.Count events">
+                    <div style="width: 100%; background: var(--accent-fill-rest); border-radius: 2px 2px 0 0; height: @(barHeight)%;">
+                    </div>
+                </div>
+            }
+        </div>
+        <div style="display: flex; gap: 2px; margin-top: 4px;">
+            @for (var i = 0; i < _throughputData.Count; i++)
+            {
+                @if (i % 6 == 0)
+                {
+                    <div style="flex: 1; font-size: 0.65rem; color: var(--neutral-foreground-hint); text-align: center;">
+                        @_throughputData[i].Hour.ToString("HH:mm")
+                    </div>
+                }
+                else
+                {
+                    <div style="flex: 1;"></div>
+                }
+            }
+        </div>
+    }
+    else
+    {
+        <p style="color: var(--neutral-foreground-hint);">No events in the last 24 hours.</p>
+    }
+</FluentCard>
+
+@* ── Per-request-type breakdown ── *@
+<h2>By Request Type</h2>
+@if (_requestTypeBreakdown.Count > 0)
+{
+    <FluentDataGrid Items="@_requestTypeBreakdown.AsQueryable()" Style="width: 100%; margin-bottom: 1.5rem;">
+        <PropertyColumn Property="@(r => r.RequestType)" Title="Request Type" Sortable="true" />
+        <PropertyColumn Property="@(r => r.Submitted)" Title="Submitted" Sortable="true" />
+        <PropertyColumn Property="@(r => r.Processing)" Title="Processing" Sortable="true" />
+        <PropertyColumn Property="@(r => r.Completed)" Title="Completed" Sortable="true" />
+        <PropertyColumn Property="@(r => r.Faulted)" Title="Faulted" Sortable="true" />
+        <PropertyColumn Property="@(r => r.Total)" Title="Total" Sortable="true" />
+    </FluentDataGrid>
+}
+else
+{
+    <FluentCard Style="padding: 1rem; margin-bottom: 1.5rem;">
+        <p style="color: var(--neutral-foreground-hint); margin: 0;">No request-type data available.</p>
+    </FluentCard>
+}
+
+@* ── Recent activity ── *@
+<h2>Recent Activity</h2>
+
+<FluentDataGrid Items="@_recentEvents" Style="width: 100%;">
+    <PropertyColumn Property="@(e => e.Timestamp)" Title="Timestamp" Format="yyyy-MM-dd HH:mm:ss" Sortable="true" />
+    <PropertyColumn Property="@(e => e.EventType)" Title="Event Type" Sortable="true" />
+    <PropertyColumn Property="@(e => e.Level)" Title="Level" Sortable="true" />
+    <PropertyColumn Property="@(e => e.RequestType)" Title="Request Type" />
+    <PropertyColumn Property="@(e => e.Message)" Title="Message" />
+</FluentDataGrid>
+
+@code {
+    private int _submitted;
+    private int _processing;
+    private int _completed;
+    private int _faulted;
+    private IQueryable<LogEventRecord> _recentEvents = default!;
+    private List<ThroughputBucket> _throughputData = new();
+    private int _maxThroughput;
+    private List<RequestTypeRow> _requestTypeBreakdown = new();
+
+    protected override void OnInitialized()
+    {
+        _submitted = Db.LogEvents.Count(e => e.EventType == "RequestSubmitted");
+        _processing = Db.LogEvents.Count(e => e.EventType == "RequestProcessing");
+        _completed = Db.LogEvents.Count(e => e.EventType == "RequestCompleted");
+        _faulted = Db.LogEvents.Count(e => e.EventType == "RequestFaulted");
+
+        _recentEvents = Db.LogEvents
+            .ToList()
+            .OrderByDescending(e => e.Timestamp)
+            .Take(10)
+            .AsQueryable();
+
+        LoadThroughputData();
+        LoadRequestTypeBreakdown();
+    }
+
+    private void LoadThroughputData()
+    {
+        var cutoff = DateTimeOffset.UtcNow.AddHours(-24);
+        // SQLite can't translate DateTimeOffset comparisons — materialize then filter.
+        var events = Db.LogEvents
+            .Select(e => e.Timestamp)
+            .ToList()
+            .Where(t => t >= cutoff)
+            .ToList();
+
+        var now = DateTimeOffset.UtcNow;
+        _throughputData = Enumerable.Range(0, 24)
+            .Select(i =>
+            {
+                var hourStart = now.AddHours(-(23 - i)).AddMinutes(-now.Minute).AddSeconds(-now.Second);
+                var hourEnd = hourStart.AddHours(1);
+                return new ThroughputBucket
+                {
+                    Hour = hourStart,
+                    Count = events.Count(e => e >= hourStart && e < hourEnd)
+                };
+            })
+            .ToList();
+
+        _maxThroughput = _throughputData.Max(b => b.Count);
+    }
+
+    private void LoadRequestTypeBreakdown()
+    {
+        var requestTypes = Db.LogEvents
+            .Where(e => e.RequestType != null && e.RequestType != "")
+            .Select(e => new { e.RequestType, e.EventType })
+            .ToList();
+
+        _requestTypeBreakdown = requestTypes
+            .GroupBy(e => e.RequestType!)
+            .Select(g => new RequestTypeRow
+            {
+                RequestType = g.Key,
+                Submitted = g.Count(e => e.EventType == "RequestSubmitted"),
+                Processing = g.Count(e => e.EventType == "RequestProcessing"),
+                Completed = g.Count(e => e.EventType == "RequestCompleted"),
+                Faulted = g.Count(e => e.EventType == "RequestFaulted"),
+                Total = g.Count()
+            })
+            .OrderByDescending(r => r.Total)
+            .ToList();
+    }
+
+    private record ThroughputBucket
+    {
+        public DateTimeOffset Hour { get; init; }
+        public int Count { get; init; }
+    }
+
+    private record RequestTypeRow
+    {
+        public string RequestType { get; init; } = "";
+        public int Submitted { get; init; }
+        public int Processing { get; init; }
+        public int Completed { get; init; }
+        public int Faulted { get; init; }
+        public int Total { get; init; }
+    }
+}

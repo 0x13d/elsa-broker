@@ -1,0 +1,32 @@
+@startuml
+!pragma layout smetana
+title elsa-broker — Elsa + Broker deployment
+
+actor "Client\n(server)" as client
+
+node "elsa-broker (.NET 9)" as broker {
+  component "Queue API\n:5001 mTLS · :5080 callback" as queue
+  component "Processor\n(MassTransit consumer)" as proc
+}
+
+database "SQL Server\naudit · outbox/inbox · transport" as sql
+
+node "Elsa 3 (container)" as elsa {
+  component "Elsa Server\nbroker-dispatch + workflows" as elsaserver
+  component "Elsa Studio\n:13000" as studio
+}
+
+folder "workflows/\nshared JSON defs" as wf
+
+client --> queue : "1. submit / poll (mTLS)"
+queue --> sql : "2. RequestRecord + outbox"
+sql --> proc : "3. deliver ISubmitRequest"
+proc --> elsaserver : "4. POST broker-dispatch\n{definitionId, message, callback, secret}"
+elsaserver --> elsaserver : "5. DispatchWorkflow(target)\nWaitForCompletion"
+elsaserver --> queue : "6. callback :5080\nX-Callback-Secret"
+queue --> sql : "7. RequestRecord → Completed"
+
+wf ..> proc : "scan: requestType → definitionId"
+wf ..> elsaserver : "mount /app/Workflows"
+studio ..> wf : "author / export"
+@enduml

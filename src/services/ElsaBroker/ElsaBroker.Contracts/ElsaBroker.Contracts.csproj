@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <PackageId>ElsaBroker.Contracts</PackageId>
+    <Description>Wire contract for ElsaBroker: ISubmitRequest envelope and RequestStatus constants. Dependency-free — reference this from message producers and consumers.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+</Project>

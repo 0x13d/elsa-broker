@@ -1,0 +1,71 @@
+/* =========================================================================
+   Ink theme for the ElsaBroker DocFX site — portfolio web standard (EPIC-011).
+   A DocFX static site can't reuse the React two-column layout, so we MATCH the
+   Ink colors: the Tufte paper/ink base + the Ink accent set, applied by
+   overriding the modern template's Bootstrap CSS variables. Colors only; assets
+   self-hosted (no CDN). Source of truth: _shared/web-standard/README.md and
+   app.stultus/.../theme/themes.ts.
+   ========================================================================= */
+
+:root,
+[data-bs-theme="light"] {
+  --bs-body-bg: #faf7f1;            /* Tufte paper            */
+  --bs-body-bg-rgb: 250, 247, 241;
+  --bs-body-color: #11120f;         /* ink                    */
+  --bs-body-color-rgb: 17, 18, 15;
+  --bs-emphasis-color: #11120f;
+  --bs-secondary-color: rgba(17, 18, 15, 0.62);
+  --bs-secondary-bg: #f3eee4;       /* paper-soft             */
+  --bs-tertiary-bg: #f3eee4;
+  --bs-border-color: rgba(17, 18, 15, 0.14);
+
+  --bs-link-color: #B7BEAF;         /* Ink brass (accent-3)   */
+  --bs-link-color-rgb: 138, 109, 59;
+  --bs-link-hover-color: #3a3a3a;
+  --bs-link-hover-color-rgb: 95, 74, 38;
+
+  --bs-primary: #3a3a3a;            /* Ink deep grey          */
+  --bs-primary-rgb: 58, 58, 58;
+}
+
+/* Top navbar + footer use the constant #3a3a3a chrome color (the standard's
+   left-column/footer color), with paper text on top. */
+.navbar {
+  background-color: #3a3a3a !important;
+  border-bottom: 1px solid rgba(17, 18, 15, 0.2);
+}
+.navbar .navbar-brand,
+.navbar .nav-link,
+.navbar .btn {
+  color: #B7BEAF !important;
+  font-weight: 300;
+}
+.navbar .nav-link:hover {
+  color: #3a3a3a !important; /* brass-light */
+  text-decoration: underline;
+}
+
+footer,
+.footer {
+  background-color: #3a3a3a;
+  color: rgba(250, 247, 241, 0.78);
+}
+footer a,
+.footer a {
+  color: #B7BEAF;
+}
+
+/* Active TOC item + in-page anchors pick up the brass accent. */
+.toc .nav-link.active,
+.affix ul li.active > a {
+  color: #8a6d3b !important;
+}
+
+/* Code + table heads on the paper-soft tint. */
+code:not(pre code) {
+  color: #5f4a26;
+  background-color: rgba(138, 109, 59, 0.10);
+}
+.table > thead {
+  background-color: #B7BEAF;
+}

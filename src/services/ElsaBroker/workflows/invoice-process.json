@@ -1,0 +1,32 @@
+{
+  "id": "invoice-process-v1",
+  "definitionId": "invoice-process",
+  "name": "Invoice Process",
+  "version": 1,
+  "isLatest": true,
+  "isPublished": true,
+  "customProperties": {
+    "requestType": "InvoiceProcess"
+  },
+  "variables": [],
+  "root": {
+    "id": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "activities": [
+      {
+        "id": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Processing invoice request via Elsa."
+          }
+        }
+      }
+    ],
+    "connections": []
+  }
+}

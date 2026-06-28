@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <PackageId>ElsaBroker.Abstractions</PackageId>
+    <Description>Extensibility interfaces for ElsaBroker: ILogShipper, BrokerLogEvent, IRequestHandler, and RequestResult. Lightweight — no EF Core or MassTransit dependencies. Reference this to implement custom log shippers or request handlers.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ElsaBroker.Contracts\ElsaBroker.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+</Project>

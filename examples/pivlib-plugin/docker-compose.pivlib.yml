@@ -1,0 +1,20 @@
+# Plugin overlay for pivlib PIV workflows.
+#
+# Usage (from the ElsaBroker solution root):
+#   docker compose -f docker-compose.yml -f examples/pivlib-plugin/docker-compose.pivlib.yml up
+#
+# This overlay demonstrates the ADR-0009 plugin pattern: mount a plugin's workflow
+# directory into the Elsa server (and eventually the Processor) and add the path to
+# the Workflows:Paths configuration array.
+
+services:
+  elsa-server:
+    volumes:
+      - ../../examples/pivlib-plugin/workflows:/app/PivlibWorkflows:ro
+
+  # The Processor is not in compose yet (runs locally), but when containerized, add:
+  # processor:
+  #   volumes:
+  #     - ../../examples/pivlib-plugin/workflows:/app/pivlib-workflows:ro
+  #   environment:
+  #     - Workflows__Paths__1=/app/pivlib-workflows

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <PackageId>ElsaBroker</PackageId>
+    <Description>ElsaBroker infrastructure package: BrokerDbContext, EF Core migrations, request-type registry, workflow registry, and built-in ILogShipper implementations (Console, HTTP/JSON, Composite). Reference this from service hosts that run the broker pipeline.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design"    Version="9.0.0" />
+    <PackageReference Include="MassTransit.EntityFrameworkCore"         Version="8.3.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ElsaBroker.Contracts\ElsaBroker.Contracts.csproj" />
+    <ProjectReference Include="..\ElsaBroker.Abstractions\ElsaBroker.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+</Project>

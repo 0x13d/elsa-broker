@@ -1,0 +1,55 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "metadata": [
+    {
+      "src": [
+        {
+          "src": "../src/services/ElsaBroker",
+          "files": ["**/*.csproj"],
+          "exclude": [
+            "**/ElsaBroker.Tests.csproj",
+            "**/ElsaBroker.CertTools.csproj"
+          ]
+        }
+      ],
+      "dest": "api",
+      "outputFormat": "mref",
+      "properties": {
+        "TargetFramework": "net9.0"
+      }
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": ["**/*.{md,yml}"],
+        "exclude": ["_site/**", ".cache/**", "scripts/**", "elsa/**", "agile/**", "**/bin/**", "**/obj/**"]
+      }
+    ],
+    "resource": [
+      {
+        "files": [
+          "diagrams/broker.svg",
+          "diagrams/broker.puml",
+          "diagrams/elsa-broker-deployment.svg",
+          "diagrams/elsa-broker-deployment.puml",
+          "test-results/coverage/**",
+          "test-results/tests/**",
+          "images/**"
+        ]
+      }
+    ],
+    "output": "../src/web/dist",
+    "template": ["default", "modern", "templates/ink"],
+    "globalMetadata": {
+      "_appName": "ElsaBroker",
+      "_appTitle": "ElsaBroker",
+      "_appFooter": "ElsaBroker — generic mTLS message-queuing layer · part of ariugwu.com",
+      "_enableSearch": true,
+      "_disableContribution": true,
+      "_disableNewTab": false
+    },
+    "globalMetadataFiles": [],
+    "postProcessors": ["ExtractSearchIndex"]
+  }
+}

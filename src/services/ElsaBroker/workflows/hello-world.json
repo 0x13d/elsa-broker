@@ -1,0 +1,21 @@
+{
+  "id": "hello-world-v1",
+  "definitionId": "hello-world",
+  "name": "Hello World",
+  "isLatest": true,
+  "isPublished": true,
+  "root": {
+    "id": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "activities": [
+      {
+        "id": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "text": {
+          "typeName": "String",
+          "expression": { "type": "Literal", "value": "Hello from elsa-broker!" }
+        }
+      }
+    ]
+  }
+}

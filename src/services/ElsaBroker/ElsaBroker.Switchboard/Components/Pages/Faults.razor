@@ -1,0 +1,172 @@
+@page "/faults"
+@using Microsoft.EntityFrameworkCore
+@inject SwitchboardDbContext Db
+
+<PageTitle>Switchboard - Faults</PageTitle>
+
+<FluentStack Orientation="Orientation.Horizontal" Style="align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+    <h1 style="margin: 0;">Faults</h1>
+    <FluentBadge Color="Color.Error">@_faultCount</FluentBadge>
+</FluentStack>
+
+<FluentStack Orientation="Orientation.Horizontal" Wrap="true" Style="gap: 0.75rem; margin-bottom: 1rem; align-items: flex-end;">
+    <div>
+        <label>Time Range</label>
+        <FluentSelect TOption="string" Items="@_timeRangeOptions" Value="@_selectedTimeRange"
+                      ValueChanged="@OnTimeRangeChanged" />
+    </div>
+    <div>
+        <label>Search</label>
+        <FluentTextField @bind-Value="_searchText" Placeholder="Message, CorrelationId, ClientId, RequestType..."
+                         @bind-Value:after="ApplyFilters" Style="min-width: 300px;" />
+    </div>
+</FluentStack>
+
+<FluentDataGrid Items="@_faultEvents" Pagination="@_pagination" Style="width: 100%;"
+                TGridItem="LogEventRecord" OnRowClick="@OnRowClicked"
+                GridTemplateColumns="180px 160px 120px 160px 1fr 40px">
+    <PropertyColumn Property="@(e => e.Timestamp)" Title="Timestamp" Format="yyyy-MM-dd HH:mm:ss" Sortable="true" />
+    <TemplateColumn Title="Event Type" Sortable="true" SortBy="@(GridSort<LogEventRecord>.ByAscending(e => e.EventType))">
+        <FluentBadge Color="Color.Error">@context.EventType</FluentBadge>
+    </TemplateColumn>
+    <PropertyColumn Property="@(e => e.Source)" Title="Source" Sortable="true" />
+    <PropertyColumn Property="@(e => e.RequestType)" Title="Request Type" Sortable="true" />
+    <PropertyColumn Property="@(e => e.Message)" Title="Message" />
+    <TemplateColumn Title="">
+        @if (!string.IsNullOrWhiteSpace(context.Exception))
+        {
+            <FluentIcon Value="@(new Icons.Regular.Size16.ChevronDown())"
+                        Title="Has exception detail" />
+        }
+    </TemplateColumn>
+</FluentDataGrid>
+
+<FluentPaginator State="@_pagination" />
+
+@if (_selectedEvent is not null)
+{
+    <FluentDialog @bind-Hidden="@_dialogHidden" Modal="true" TrapFocus="true"
+                  Style="min-width: 600px;" PreventDismiss="false">
+        <FluentDialogHeader>
+            <h3 style="margin: 0;">Fault Detail</h3>
+        </FluentDialogHeader>
+        <FluentDialogBody>
+            <FluentStack Orientation="Orientation.Vertical" Style="gap: 0.5rem;">
+                <div><strong>ID:</strong> @_selectedEvent.Id</div>
+                <div><strong>Timestamp:</strong> @_selectedEvent.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff")</div>
+                <div><strong>Event Type:</strong> @_selectedEvent.EventType</div>
+                <div><strong>Level:</strong> @_selectedEvent.Level</div>
+                <div><strong>Source:</strong> @_selectedEvent.Source</div>
+                <div><strong>Request Type:</strong> @(_selectedEvent.RequestType ?? "-")</div>
+                <div><strong>Correlation ID:</strong> @(_selectedEvent.CorrelationId ?? "-")</div>
+                <div><strong>Client ID:</strong> @(_selectedEvent.ClientId ?? "-")</div>
+                <div><strong>Message:</strong> @(_selectedEvent.Message ?? "-")</div>
+                @if (!string.IsNullOrWhiteSpace(_selectedEvent.PropertiesJson))
+                {
+                    <div>
+                        <strong>Properties:</strong>
+                        <pre style="background: var(--neutral-layer-2); padding: 0.5rem; border-radius: 4px; overflow-x: auto;">@FormatJson(_selectedEvent.PropertiesJson)</pre>
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(_selectedEvent.Exception))
+                {
+                    <div>
+                        <strong>Exception:</strong>
+                        <pre style="background: #fde7e9; padding: 0.5rem; border-radius: 4px; overflow-x: auto; color: #a80000;">@_selectedEvent.Exception</pre>
+                    </div>
+                }
+            </FluentStack>
+        </FluentDialogBody>
+        <FluentDialogFooter>
+            <FluentButton Appearance="Appearance.Accent" OnClick="@CloseDialog">Close</FluentButton>
+        </FluentDialogFooter>
+    </FluentDialog>
+}
+
+@code {
+    private IQueryable<LogEventRecord> _faultEvents = default!;
+    private PaginationState _pagination = new() { ItemsPerPage = 25 };
+    private int _faultCount;
+
+    private List<string> _timeRangeOptions = new() { "All", "Last 1h", "Last 6h", "Last 24h", "Last 7d" };
+    private string _selectedTimeRange = "All";
+
+    private string? _searchText;
+
+    private LogEventRecord? _selectedEvent;
+    private bool _dialogHidden = true;
+
+    protected override void OnInitialized()
+    {
+        ApplyFilters();
+    }
+
+    private void OnTimeRangeChanged(string value)
+    {
+        _selectedTimeRange = value;
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        // SQLite can't translate DateTimeOffset comparisons — load then filter in memory.
+        IEnumerable<LogEventRecord> query = Db.LogEvents
+            .ToList()
+            .Where(e => e.Level == "Error" || e.EventType.Contains("Faulted"));
+
+        if (_selectedTimeRange != "All")
+        {
+            var cutoff = _selectedTimeRange switch
+            {
+                "Last 1h" => DateTimeOffset.UtcNow.AddHours(-1),
+                "Last 6h" => DateTimeOffset.UtcNow.AddHours(-6),
+                "Last 24h" => DateTimeOffset.UtcNow.AddHours(-24),
+                "Last 7d" => DateTimeOffset.UtcNow.AddDays(-7),
+                _ => DateTimeOffset.MinValue
+            };
+            query = query.Where(e => e.Timestamp >= cutoff);
+        }
+
+        if (!string.IsNullOrWhiteSpace(_searchText))
+        {
+            var search = _searchText;
+            query = query.Where(e =>
+                (e.Message != null && e.Message.Contains(search)) ||
+                (e.CorrelationId != null && e.CorrelationId.Contains(search)) ||
+                (e.ClientId != null && e.ClientId.Contains(search)) ||
+                (e.RequestType != null && e.RequestType.Contains(search)));
+        }
+
+        var results = query.OrderByDescending(e => e.Timestamp).ToList();
+        _faultEvents = results.AsQueryable();
+        _faultCount = results.Count;
+    }
+
+    private void OnRowClicked(FluentDataGridRow<LogEventRecord> row)
+    {
+        if (row.Item is not null)
+        {
+            _selectedEvent = row.Item;
+            _dialogHidden = false;
+        }
+    }
+
+    private void CloseDialog()
+    {
+        _dialogHidden = true;
+        _selectedEvent = null;
+    }
+
+    private static string FormatJson(string json)
+    {
+        try
+        {
+            var doc = System.Text.Json.JsonDocument.Parse(json);
+            return System.Text.Json.JsonSerializer.Serialize(doc, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        }
+        catch
+        {
+            return json;
+        }
+    }
+}

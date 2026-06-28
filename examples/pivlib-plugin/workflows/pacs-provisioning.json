@@ -1,0 +1,30 @@
+{
+  "id": "pacs-provisioning-v1",
+  "definitionId": "pacs-provisioning",
+  "name": "PACS Provisioning",
+  "version": 1,
+  "isLatest": true,
+  "isPublished": true,
+  "customProperties": { "requestType": "PacsProvisioning" },
+  "variables": [],
+  "root": {
+    "id": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "activities": [
+      {
+        "id": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "PACS provisioning complete — FASC-N registered with physical access control system."
+          }
+        }
+      }
+    ],
+    "connections": []
+  }
+}

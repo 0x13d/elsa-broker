@@ -1,0 +1,30 @@
+{
+  "id": "piv-enroll-v1",
+  "definitionId": "piv-enroll",
+  "name": "PIV Enroll",
+  "version": 1,
+  "isLatest": true,
+  "isPublished": true,
+  "customProperties": { "requestType": "PivEnroll" },
+  "variables": [],
+  "root": {
+    "id": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "activities": [
+      {
+        "id": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "PIV enrollment accepted — employee registered for credential issuance."
+          }
+        }
+      }
+    ],
+    "connections": []
+  }
+}

@@ -1,0 +1,19 @@
+@startuml
+!include <C4/C4_Container>
+
+top to bottom direction
+LAYOUT_WITH_LEGEND()
+title "ElsaBroker topology"
+
+Container(client_a, "Client A", "Client")
+Container(client_b, "Client B", "Client")
+Container(queue_api, "Queue API (ASP.NET Core, mTLS)", "Server")
+Container(processor, "Processor (Worker)", "Server")
+Container(sql_server, "SQL Server (bus transport + EF outbox/inbox + audit)", "Server")
+
+Rel(client_a, queue_api, "mTLS submit / poll", "https")
+Rel(client_b, queue_api, "mTLS submit / poll", "https")
+Rel(queue_api, sql_server, "enqueue + status (EF outbox)", "tds")
+Rel(sql_server, processor, "deliver ISubmitRequest", "sql-transport")
+Rel(processor, sql_server, "update audit (EF)", "tds")
+@enduml

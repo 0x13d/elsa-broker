@@ -1,0 +1,17 @@
+@inherits LayoutComponentBase
+
+<FluentDesignTheme StorageName="switchboard-theme" />
+
+<FluentLayout>
+    <FluentHeader>Switchboard</FluentHeader>
+    <FluentStack Orientation="Orientation.Horizontal" Style="height: calc(100vh - 50px);">
+        <FluentNavMenu Width="250" Title="Navigation">
+            <FluentNavLink Href="/" Match="NavLinkMatch.All" Icon="@(new Icons.Regular.Size20.Home())">Overview</FluentNavLink>
+            <FluentNavLink Href="/events" Icon="@(new Icons.Regular.Size20.List())">Events</FluentNavLink>
+            <FluentNavLink Href="/faults" Icon="@(new Icons.Regular.Size20.Warning())">Faults</FluentNavLink>
+        </FluentNavMenu>
+        <FluentBodyContent Style="padding: 1rem; overflow-y: auto; flex: 1;">
+            @Body
+        </FluentBodyContent>
+    </FluentStack>
+</FluentLayout>

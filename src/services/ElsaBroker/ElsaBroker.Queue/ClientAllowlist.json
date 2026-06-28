@@ -1,0 +1,15 @@
+{
+  "_comment": "Map client certificate thumbprints to ClientIds. Add one entry per authorized server. Thumbprints are SHA-1, uppercase, no spaces (output by certtools).",
+  "clients": [
+    {
+      "clientId": "ClientA",
+      "thumbprint": "D18E885D9CB63C1416AF8712FD227C0F0B6A981C",
+      "description": "ClientA invoice processing server"
+    },
+    {
+      "clientId": "ClientB",
+      "thumbprint": "REPLACE_WITH_THUMBPRINT_FROM_CERTTOOLS",
+      "description": "ClientB policy renewal server"
+    }
+  ]
+}

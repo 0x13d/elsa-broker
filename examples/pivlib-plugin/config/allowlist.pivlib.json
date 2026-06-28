@@ -1,0 +1,6 @@
+{
+  "_comment": "Add this entry to the broker's ClientAllowlist.json after generating the IDMS Emulator cert.",
+  "clientId": "IdmsEmulator",
+  "thumbprint": "REPLACE_WITH_THUMBPRINT_FROM_CERTTOOLS",
+  "description": "PIV IDMS Emulator (app.pivlib plugin)"
+}

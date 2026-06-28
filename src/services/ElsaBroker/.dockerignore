@@ -1,0 +1,26 @@
+# Shared .dockerignore for all ElsaBroker Dockerfiles.
+# Build context is the solution directory (src/services/ElsaBroker/).
+#
+# Each Dockerfile selectively COPYs only the project directories it needs,
+# so we do NOT exclude individual projects here — the Dockerfiles themselves
+# control what enters each image.
+
+**/bin/
+**/obj/
+**/reports/
+**/certs/
+**/*.pfx
+**/*.pem
+**/*.key
+
+# IDE / tooling
+**/.vs/
+**/.idea/
+**/.vscode/
+**/node_modules/
+
+# Test project (never needed in runtime images)
+ElsaBroker.Tests/
+
+# CLI tool (never needed in runtime images)
+ElsaBroker.CertTools/

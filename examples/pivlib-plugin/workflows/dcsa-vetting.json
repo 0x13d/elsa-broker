@@ -1,0 +1,30 @@
+{
+  "id": "dcsa-vetting-v1",
+  "definitionId": "dcsa-vetting",
+  "name": "DCSA Vetting",
+  "version": 1,
+  "isLatest": true,
+  "isPublished": true,
+  "customProperties": { "requestType": "DcsaVetting" },
+  "variables": [],
+  "root": {
+    "id": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "activities": [
+      {
+        "id": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "DCSA background investigation vetting approved — favorable adjudication."
+          }
+        }
+      }
+    ],
+    "connections": []
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "type": "NetworkGraph",
+  "label": "ElsaBroker topology",
+  "protocol": "static",
+  "metric": "flow",
+  "nodes": [
+    {
+      "id": "client-a",
+      "label": "Client A",
+      "properties": { "role": "client" }
+    },
+    {
+      "id": "client-b",
+      "label": "Client B",
+      "properties": { "role": "client" }
+    },
+    {
+      "id": "queue-api",
+      "label": "Queue API (ASP.NET Core, mTLS)",
+      "properties": { "role": "server" }
+    },
+    {
+      "id": "processor",
+      "label": "Processor (Worker)",
+      "properties": { "role": "server" }
+    },
+    {
+      "id": "sql-server",
+      "label": "SQL Server (bus transport + EF outbox/inbox + audit)",
+      "properties": { "role": "server" }
+    }
+  ],
+  "links": [
+    {
+      "source": "client-a",
+      "target": "queue-api",
+      "cost": 1.0,
+      "cost_text": "mTLS submit / poll",
+      "properties": { "protocol": "https" }
+    },
+    {
+      "source": "client-b",
+      "target": "queue-api",
+      "cost": 1.0,
+      "cost_text": "mTLS submit / poll",
+      "properties": { "protocol": "https" }
+    },
+    {
+      "source": "queue-api",
+      "target": "sql-server",
+      "cost": 1.0,
+      "cost_text": "enqueue + status (EF outbox)",
+      "properties": { "protocol": "tds" }
+    },
+    {
+      "source": "sql-server",
+      "target": "processor",
+      "cost": 1.0,
+      "cost_text": "deliver ISubmitRequest",
+      "properties": { "protocol": "sql-transport" }
+    },
+    {
+      "source": "processor",
+      "target": "sql-server",
+      "cost": 1.0,
+      "cost_text": "update audit (EF)",
+      "properties": { "protocol": "tds" }
+    }
+  ]
+}

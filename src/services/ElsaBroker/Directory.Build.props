@@ -1,0 +1,25 @@
+<Project>
+  <!-- Shared defaults for every ElsaBroker project. Keeps the scaffold consistent
+       so individual csproj files only carry what is genuinely project-specific. -->
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- 1591: don't fail the build on undocumented public members while docs are in progress. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <!-- NuGet packaging defaults (opt-in via IsPackable=true in each library csproj). -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <Version>0.3.0</Version>
+    <Authors>ariugwu</Authors>
+    <Company>com.ariugwu</Company>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/ariugwu/elsa-broker</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://ariugwu.com/elsa-broker</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,214 @@
+# ---------------------------------------------------------------------------
+# docker-compose.reference.yml — Production-like deployment of the full
+# ElsaBroker stack.
+#
+# This is a REFERENCE file that shows how every service wires together.
+# It is NOT the development lab (docker-compose.yml). Operators should
+# adapt it for their environment: replace placeholder secrets, mount real
+# certs, tune resource limits, and review the network topology.
+#
+# Usage:
+#   docker compose -f docker-compose.reference.yml up --build -d
+#
+# Services:
+#   sqlserver              SQL Server 2022 — broker DB + MassTransit SQL transport
+#   elsa-broker-queue      ASP.NET Core API — mTLS ingress (:5001) + callback (:5080)
+#   elsa-broker-processor  Worker — consumes from SQL transport, dispatches to Elsa
+#   elsa-server            Custom Elsa 3 workflow server (:8080)
+#   elsa-studio            Official Elsa Studio SPA (:14000)
+# ---------------------------------------------------------------------------
+
+x-broker-db: &broker-db-conn
+  "Server=sqlserver,1433;Database=ElsaBroker;User Id=sa;Password=${SA_PASSWORD:-YourStrong!Passw0rd};TrustServerCertificate=True;"
+
+services:
+  # --------------------------------------------------------------------------
+  # SQL Server 2022 — the single datastore for the broker DB, MassTransit SQL
+  # transport queues, and the EF outbox/inbox tables.
+  #
+  # On Apple Silicon this amd64 image requires Docker Desktop's Rosetta x86-64
+  # emulation (Settings > General > "Use Rosetta..."). See ADR-0005.
+  # --------------------------------------------------------------------------
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    container_name: elsa-broker-sql
+    environment:
+      MSSQL_SA_PASSWORD: "${SA_PASSWORD:-YourStrong!Passw0rd}"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "${MSSQL_PID:-Developer}"
+    ports:
+      - "${SQL_PORT:-1433}:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - broker-internal
+    healthcheck:
+      test: >-
+        /opt/mssql-tools18/bin/sqlcmd
+          -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C
+          -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+
+  # --------------------------------------------------------------------------
+  # ElsaBroker.Queue — the mTLS-secured API ingress.
+  #
+  # Ports:
+  #   5001 — public mTLS endpoint (clients submit requests here)
+  #   5080 — internal callback endpoint (Elsa workflows finalize requests)
+  #
+  # Mount the server certificate and CA chain at runtime. The certs/ volume
+  # must contain:
+  #   localhost.pfx   — server TLS cert (or override via Mtls:ServerCertPath)
+  #   ca.crt          — internal CA cert (for chain validation)
+  #
+  # requestTypes.json and ClientAllowlist.json are baked into the image from
+  # the source tree. Override them at runtime by bind-mounting replacements
+  # into /app/.
+  # --------------------------------------------------------------------------
+  elsa-broker-queue:
+    build:
+      context: .
+      dockerfile: ElsaBroker.Queue/Dockerfile
+    container_name: elsa-broker-queue
+    environment:
+      ASPNETCORE_ENVIRONMENT: "${ASPNETCORE_ENVIRONMENT:-Production}"
+      ConnectionStrings__BrokerDb: *broker-db-conn
+      # mTLS configuration — update these for your certificate infrastructure.
+      Mtls__ServerCertPath: "/app/certs/localhost.pfx"
+      Mtls__CaThumbprint: "${CA_THUMBPRINT:-REPLACE_WITH_YOUR_CA_THUMBPRINT}"
+      # Shared secret for the internal Elsa callback endpoint. Must match the
+      # value configured in the Elsa workflow's HTTP activity headers AND in
+      # the Processor's config.
+      Elsa__CallbackSecret: "${CALLBACK_SECRET:-dev-callback-secret-change-me}"
+      # Log shipper (optional). Set to "Console", "Http", or leave empty.
+      LogShipper__Sink: "${LOG_SHIPPER_SINK:-Console}"
+      LogShipper__SinkUrl: "${LOG_SHIPPER_URL:-}"
+      LogShipper__ApiKey: "${LOG_SHIPPER_API_KEY:-}"
+    ports:
+      # Public mTLS ingress — expose to external clients.
+      - "${QUEUE_MTLS_PORT:-5001}:5001"
+    # The callback port (5080) is intentionally NOT published to the host.
+    # It is reachable only on the broker-internal network.
+    volumes:
+      # Mount server cert + CA chain. Produce these with ElsaBroker.CertTools.
+      - ./certs:/app/certs:ro
+      # Optionally override the baked-in allowlist / registry at runtime:
+      # - ./config/ClientAllowlist.json:/app/ClientAllowlist.json:ro
+      # - ./config/requestTypes.json:/app/requestTypes.json:ro
+    networks:
+      - broker-internal
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    healthcheck:
+      # Probe the internal (non-mTLS) callback listener. A 404 is fine — it
+      # proves the HTTP stack is up. The mTLS port cannot be probed without
+      # a valid client cert.
+      test: ["CMD-SHELL", "curl -sf http://localhost:5080/internal/requests/00000000-0000-0000-0000-000000000000/result || true"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # --------------------------------------------------------------------------
+  # ElsaBroker.Processor — the MassTransit consumer / Elsa dispatcher.
+  #
+  # No exposed ports. Connects to SQL Server for the MassTransit SQL transport
+  # and to the Elsa server for workflow dispatch. The workflows/ folder is
+  # baked into the image; mount a volume to override for live edits.
+  # --------------------------------------------------------------------------
+  elsa-broker-processor:
+    build:
+      context: .
+      dockerfile: ElsaBroker.Processor/Dockerfile
+    container_name: elsa-broker-processor
+    environment:
+      DOTNET_ENVIRONMENT: "${DOTNET_ENVIRONMENT:-Production}"
+      ConnectionStrings__BrokerDb: *broker-db-conn
+      # Elsa dispatch configuration. The DispatchUrl points at the Elsa server's
+      # broker-dispatch workflow endpoint over the internal network.
+      Elsa__DispatchUrl: "http://elsa-server:8080/workflows/broker-dispatch"
+      # CallbackBaseUrl tells the Elsa workflow where to POST the result.
+      # This points at the Queue's internal listener on the Docker network.
+      Elsa__CallbackBaseUrl: "http://elsa-broker-queue:5080"
+      Elsa__CallbackSecret: "${CALLBACK_SECRET:-dev-callback-secret-change-me}"
+      # Override the baked-in workflow scan path if mounting a volume.
+      Elsa__WorkflowsPath: "/app/workflows"
+      # Log shipper (optional).
+      LogShipper__Sink: "${LOG_SHIPPER_SINK:-Console}"
+      LogShipper__SinkUrl: "${LOG_SHIPPER_URL:-}"
+      LogShipper__ApiKey: "${LOG_SHIPPER_API_KEY:-}"
+    volumes:
+      # Mount the workflows folder for live edits without rebuilding.
+      - ./workflows:/app/workflows:ro
+    networks:
+      - broker-internal
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      elsa-server:
+        condition: service_healthy
+
+  # --------------------------------------------------------------------------
+  # Elsa Server — custom Elsa 3 server built from ElsaBroker.WorkflowServer.
+  #
+  # Runs native arm64 on Apple Silicon. Do NOT pin platform: linux/amd64 —
+  # the amd64 Elsa image crashes under Rosetta's JIT (see ADR-0005).
+  # --------------------------------------------------------------------------
+  elsa-server:
+    build:
+      context: .
+      dockerfile: ElsaBroker.WorkflowServer/Dockerfile
+    container_name: elsa-broker-server
+    environment:
+      ASPNETCORE_ENVIRONMENT: "${ASPNETCORE_ENVIRONMENT:-Production}"
+      Elsa__Identity__SigningKey: "${ELSA_SIGNING_KEY:-elsa-broker-dev-signing-key-0123456789abcdef}"
+      Elsa__WorkflowsPath: "/app/Workflows"
+    volumes:
+      # Mount the host workflows folder so the Elsa server picks up the latest
+      # workflow definitions. In development, Studio exports land here too.
+      - ./workflows:/app/Workflows:ro
+    networks:
+      - broker-internal
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/elsa/api/workflow-definitions || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # --------------------------------------------------------------------------
+  # Elsa Studio — official SPA for authoring/monitoring workflows.
+  #
+  # Optional in production; include it when operators need visual workflow
+  # management. Default credentials: admin / password.
+  # --------------------------------------------------------------------------
+  elsa-studio:
+    image: elsaworkflows/elsa-studio-v3:latest
+    container_name: elsa-broker-studio
+    environment:
+      ELSASERVER__URL: "http://elsa-server:8080/elsa/api"
+    ports:
+      - "${STUDIO_PORT:-14000}:8080"
+    networks:
+      - broker-internal
+    depends_on:
+      elsa-server:
+        condition: service_healthy
+
+networks:
+  # All broker services communicate on an isolated internal network.
+  # Only the Queue's mTLS port (5001) and optionally Studio are published
+  # to the host / external network.
+  broker-internal:
+    driver: bridge
+
+volumes:
+  sqlserver_data:
