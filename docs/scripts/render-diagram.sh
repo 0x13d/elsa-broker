@@ -14,9 +14,11 @@ DOCS="$(cd "$HERE/.." && pwd)"
 DIAG="$DOCS/diagrams"
 CACHE="$DOCS/.cache"
 
-# Sibling projects that own the conversions.
-NETJSON_REPO="${NETJSON_REPO:-$DOCS/../../netjson-diagrams}"
-ELSA_REPO="${ELSA_REPO:-$DOCS/../../elsa-to-mermaid}"
+# Sibling projects that own the conversions. Post-2026-06-28 community layout:
+# both moved under _community/ (netjson → _community/netjson/diagrams, elsa-to-mermaid
+# → _community/elsa/diagrams). Override via NETJSON_REPO / ELSA_REPO env if relocated.
+NETJSON_REPO="${NETJSON_REPO:-$DOCS/../../../netjson/diagrams}"
+ELSA_REPO="${ELSA_REPO:-$DOCS/../../diagrams}"
 
 # Pinned PlantUML (MIT build). Bump version + hash together; verify the render.
 PLANTUML_VERSION="${PLANTUML_VERSION:-1.2026.5}"

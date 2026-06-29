@@ -1,0 +1,11 @@
+{
+  "name": "elsa-broker-monorepo",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Build/deploy orchestration for ElsaBroker (.NET). deploy → netlify (DocFX site in src/web/dist), release → NuGet packages into the central _releases/ feed. Uses the .NET 9 SDK in ~/.dotnet (system dotnet is 8.0).",
+  "scripts": {
+    "build": "bash src/web/build.sh",
+    "deploy": "npm run build && netlify deploy --prod --dir=src/web/dist",
+    "release": "PATH=\"$HOME/.dotnet:$PATH\" dotnet pack src/services/ElsaBroker/ElsaBroker.sln -c Release -o ../../../_releases/nuget"
+  }
+}
